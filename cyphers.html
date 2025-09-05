@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de cyphers</title>
+    <!-- Incluir Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div class="bg-white p-6 md:p-10 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all duration-300">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Generador de cyphers One Shot Battles</h1>
+        <p class="text-center text-gray-500 mb-8">Registra los nombres y realiza el sorteos aleatorio del cypher.</p>
+
+        <!-- Sección de entrada de nombres -->
+        <div class="bg-indigo-50 p-5 rounded-lg mb-6 shadow-inner">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Agregar AKA's</h2>
+            <div class="flex items-center space-x-2">
+                <input type="text" id="nameInput" class="flex-1 p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Escribe un nombre...">
+                <button id="addBtn" class="bg-indigo-600 text-white p-3 rounded-md shadow-md hover:bg-indigo-700 transition-colors duration-200 font-medium">Agregar</button>
+            </div>
+        </div>
+
+        <!-- Mensajes de estado -->
+        <div id="messageBox" class="text-sm font-medium text-center py-2 px-4 rounded-md mb-6 hidden"></div>
+
+        <!-- Sección de lista y sorteo -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Lista de nombres -->
+            <div class="bg-gray-50 p-5 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Mc's en la Lista (<span id="count">0</span>)</h2>
+                <ul id="namesList" class="space-y-2 text-gray-600 h-48 overflow-y-auto">
+                    <!-- Los nombres se agregarán aquí dinámicamente -->
+                </ul>
+            </div>
+
+            <!-- Sección de sorteo -->
+            <div class="bg-green-50 p-5 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Realizar Sorteo</h2>
+                <div class="flex items-center space-x-2 mb-4">
+                    <input type="number" id="drawCountInput" class="w-24 p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Cantidad" min="1" value="1">
+                    <button id="drawBtn" class="flex-1 bg-green-600 text-white p-3 rounded-md shadow-md hover:bg-green-700 transition-colors duration-200 font-medium">Sortear mc's</button>
+                </div>
+                <!-- Ganadores del último sorteo -->
+                <div class="mt-4">
+                    <h3 class="font-medium text-gray-700 mb-2">Último Sorteo:</h3>
+                    <ul id="drawnNamesList" class="space-y-1 text-green-700 font-bold">
+                        <!-- Los nombres sorteados se mostrarán aquí -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de JavaScript para la lógica de la aplicación -->
+    <script>
+        const nameInput = document.getElementById('nameInput');
+        const addBtn = document.getElementById('addBtn');
+        const drawBtn = document.getElementById('drawBtn');
+        const drawCountInput = document.getElementById('drawCountInput');
+        const namesListContainer = document.getElementById('namesList');
+        const drawnNamesListContainer = document.getElementById('drawnNamesList');
+        const countSpan = document.getElementById('count');
+        const messageBox = document.getElementById('messageBox');
+
+        let namesList = [];
+
+        // Función para mostrar mensajes al usuario
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800', 'bg-yellow-200', 'text-yellow-800');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-200', 'text-red-800');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-200', 'text-green-800');
+            } else {
+                messageBox.classList.add('bg-yellow-200', 'text-yellow-800');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Función para actualizar la lista de nombres en la UI
+        function updateNamesList() {
+            namesListContainer.innerHTML = '';
+            namesList.forEach(name => {
+                const li = document.createElement('li');
+                li.className = 'p-2 bg-gray-200 rounded-md';
+                li.textContent = name;
+                namesListContainer.appendChild(li);
+            });
+            countSpan.textContent = namesList.length;
+        }
+
+        // Evento para agregar un nombre
+        addBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                namesList.push(name);
+                nameInput.value = '';
+                updateNamesList();
+                showMessage(`"${name}" ha sido agregado a la lista.`, 'success');
+            } else {
+                showMessage("Por favor, introduce un nombre.", 'error');
+            }
+        });
+
+        // Evento para sortear nombres
+        drawBtn.addEventListener('click', () => {
+            const drawCount = parseInt(drawCountInput.value, 10);
+            
+            // Validaciones
+            if (isNaN(drawCount) || drawCount <= 0) {
+                showMessage("Por favor, introduce una cantidad válida mayor a cero.", 'error');
+                return;
+            }
+            if (namesList.length === 0) {
+                showMessage("La lista de nombres está vacía. No hay nombres para sortear.", 'error');
+                return;
+            }
+            if (drawCount > namesList.length) {
+                showMessage(`No puedes sortear ${drawCount} nombres. Solo hay ${namesList.length} en la lista.`, 'error');
+                return;
+            }
+
+            // Realizar el sorteo
+            const drawnNames = [];
+            for (let i = 0; i < drawCount; i++) {
+                const randomIndex = Math.floor(Math.random() * namesList.length);
+                const drawnName = namesList.splice(randomIndex, 1)[0];
+                drawnNames.push(drawnName);
+            }
+
+            // Actualizar la UI
+            updateNamesList();
+            drawnNamesListContainer.innerHTML = '';
+            drawnNames.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                drawnNamesListContainer.appendChild(li);
+            });
+            
+            showMessage(`¡Se han sorteado ${drawnNames.length} nombres!`, 'success');
+
+            if (namesList.length === 0) {
+                setTimeout(() => {
+                    showMessage("¡La lista de nombres está vacía. El sorteo ha terminado!", 'info');
+                }, 1000);
+            }
+        });
+
+        // Habilitar la adición de nombres con la tecla Enter
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                addBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
